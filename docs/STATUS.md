@@ -211,9 +211,18 @@ images, cross-compiled for `linux/amd64` and `linux/arm64`;
 `contrib/release.sh` publishes both images to Docker Hub as manifest lists,
 refusing a dirty tree or an untagged commit and verifying the version stamp and
 architecture coverage afterwards. The multi-architecture build and the stamp
-check have been run locally. **Nothing has been published yet**, and no CI runs
-any of it. ❌ No install script, no `.deb`/`.rpm`, no release automation beyond
-that script.
+check have been run locally. The same script cross-compiles the `mantle` CLI for
+darwin and linux on amd64 and arm64, checksums the archives, and attaches them
+to a GitHub Release; `contrib/install.sh` is the `curl | sh` installer that
+consumes them, with SHA-256 verification and no privilege escalation by
+default. Both were exercised end to end against a local HTTP server, including
+the tampered-archive and missing-version paths.
+
+The container images are published; **no GitHub Release exists yet**, so
+`install.sh` currently reports that nothing has been published and points at
+building from source. No CI runs any of it. ❌ No `.deb`/`.rpm`, no release
+automation beyond that script, and `mantle install` — the full installer with
+preflight, ACME and a systemd unit — remains unimplemented.
 
 ---
 

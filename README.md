@@ -40,6 +40,28 @@ In short: **M1 and most of M2 are here, plus the M3 ledger**, and a read-only
 web interface (`mantle-ui`). The S3 driver, ACME, webhook delivery, replication,
 scanning, and OIDC are not.
 
+## Install the CLI
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/bugloper/mantle/main/contrib/install.sh | sh
+```
+
+Detects your platform, fetches the `mantle` binary from GitHub Releases, checks
+it against the published SHA-256, and installs it somewhere already on your
+PATH — no privilege escalation unless you point it somewhere that needs it.
+`MANTLE_VERSION` pins a version and `MANTLE_INSTALL_DIR` chooses the location.
+
+That pattern runs whatever the server returns, so if you would rather read it
+first — and [`contrib/install.sh`](contrib/install.sh) is written to be read:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/bugloper/mantle/main/contrib/install.sh
+less install.sh && sh install.sh
+```
+
+This installs the CLI only. The registry daemon needs a database and a
+configuration file, so it ships as a container image — see below.
+
 ## Quick start
 
 Two ways in. Docker needs nothing else installed; the source path gives you the
@@ -301,11 +323,16 @@ make release-dry-run  # build the images for every architecture, push nothing
 make release          # build and publish to Docker Hub
 ```
 
-`make release` runs [`contrib/release.sh`](contrib/release.sh), which refuses a
-dirty tree or an untagged commit, asks for confirmation before publishing
-anything public, and afterwards checks that the image reports the version it
-claims and that the manifest carries every architecture. `docs/docker.md`
-describes it in full.
+`make release` runs [`contrib/release.sh`](contrib/release.sh), which publishes
+two things: the container images to Docker Hub, and a GitHub Release carrying
+the CLI binaries for macOS and Linux on amd64 and arm64 — which is what
+`contrib/install.sh` fetches. `--skip-images` and `--skip-binaries` do one
+without the other.
+
+It refuses a dirty tree or an untagged commit, asks for confirmation before
+publishing anything public, and afterwards checks that the image reports the
+version it claims, that the manifest carries every architecture, and that a
+freshly built CLI archive actually runs. `docs/docker.md` describes it in full.
 
 Binaries build to a temporary name and are moved into place, so rebuilding
 while a daemon is running is safe. Overwriting a running executable in place
@@ -355,7 +382,7 @@ test/integration       end-to-end, over real HTTP against real Postgres
 test/architecture      the dependency rule, enforced
 
 docs/                  status, config templates, Docker and Kamal guides
-contrib/               dev-seed.sh, release.sh
+contrib/               install.sh, dev-seed.sh, release.sh
 ```
 
 ## Licence

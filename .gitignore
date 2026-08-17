@@ -6,3 +6,6 @@
 /mantled
 /mantle
 /mantle-ui
+
+# Release artifacts built by contrib/release.sh
+/dist/
