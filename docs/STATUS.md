@@ -53,11 +53,13 @@ That is M1's exit criterion and the single most valuable next step.
 
 ## §9 — Identity and authorization
 
-✅ Docker token flow, RS256 JWTs, JWKS at `/auth/jwks.json`, scope
-intersection, users / PATs / robots / deploy tokens, Argon2id with a
-selector-verifier split, three-level RBAC with explicit deny, REQ-AUTHZ-01,
-REQ-AUTHZ-02 (per-request re-evaluation), anonymous pull for public
-repositories.
+✅ Docker token flow in **both** shapes — `GET` with the scope in the query
+string and a Basic header, and the OAuth2 `POST` form with `grant_type`,
+`scope` and credentials in the body, which is what containerd and Docker 29
+send. RS256 JWTs, JWKS at `/auth/jwks.json`, scope intersection, users / PATs /
+robots / deploy tokens, Argon2id with a selector-verifier split, three-level
+RBAC with explicit deny, REQ-AUTHZ-01, REQ-AUTHZ-02 (per-request
+re-evaluation), anonymous pull for public repositories.
 
 ❌ OIDC (§9.4). The config field exists and is validated; there is no
 implementation behind it. ❌ TOTP. ❌ `jti` revocation-before-expiry —
@@ -221,24 +223,45 @@ that script.
 |---|---|
 | Unit | ✅ digests, hash checkpointing, names, manifests, credentials, storage, config, routing, UI server |
 | Log scrubbing (SEC-12) | ✅ the dedicated test the specification names |
-| Integration (real HTTP + real Postgres) | ✅ 24 tests: push/pull, protocol edge cases, security, ledger, GC |
+| Integration (real HTTP + real Postgres) | ✅ 27 tests: push/pull, protocol edge cases, security, ledger, GC, client compatibility |
 | Architecture | ✅ the §7.2 dependency rule, plus CLI and UI client-separation, enforced |
 | Race detector | ✅ the whole suite passes under `-race` |
 | Conformance suite | ❌ |
-| Client matrix (Docker, Podman, BuildKit, …) | ❌ **nothing has been pushed by a real Docker client** |
+| Client matrix (Docker, Podman, BuildKit, …) | ◐ **Docker 29.7.2 pushes and pulls**; Podman, BuildKit, Skopeo and Cosign untested |
 | Browser matrix for `mantle-ui` | ◐ the Go server is tested; the read and create-repository flows were driven in real Chrome, the rest only syntax-checked |
 | Property / fuzz | ❌ |
-| Concurrency | ◐ concurrent blob commit only |
+| Concurrency | ◐ concurrent blob commit, and concurrent repository auto-creation |
 | Chaos | ❌ |
 | Performance | ❌ |
 | Upgrade | ❌ |
 
-The client matrix gap is the one to weigh most heavily. The protocol was
-verified with an HTTP client that performs the token dance exactly as Docker
-does, and with `curl` against a live daemon — but the specification names Docker
-as the reference client whose behaviour is the priority, and no Docker daemon
-was available in this environment. Until an image is pushed by `docker push`,
-Docker interoperability is untested.
+**A real `docker push` and `docker pull` now round-trip**, against the published
+container image running under Compose with PostgreSQL. It was worth doing
+early: the reference client failed immediately, in two ways this suite could
+not see, and both are now covered by tests in
+`test/integration/client_compat_test.go`.
+
+- **The token endpoint ignored the OAuth2 form.** It read the scope from the
+  query string and the credential from a Basic header — the original Docker
+  shape, and the one the test harness speaks. containerd, and so Docker 29,
+  posts `grant_type=password` with the scope, username and password in a
+  form-encoded body. Those were dropped, the caller authenticated as nobody,
+  and a **200** was returned carrying a well-formed token granting nothing.
+  Docker then retried the push against it until it gave up, with the visible
+  symptom a 401 loop on the blob endpoint and no sign the token service was
+  involved.
+- **Repository auto-creation raced against itself.** Docker uploads a
+  manifest's layers concurrently, so a first push reaches `EnsureRepository`
+  several times at once. The upsert named `ON CONFLICT (name)`, but the table
+  also carries `UNIQUE (organization_id, name)`, which Postgres checks first —
+  so the conflict fell outside the arbiter and surfaced as a raw unique
+  violation, failing the push with a 500.
+
+Neither is exotic, and both were invisible to a suite whose client performs the
+token dance one particular way. That is the argument for the conformance suite
+and the rest of the client matrix, not against them: Podman, BuildKit, Skopeo
+and Cosign remain untested, and there is no reason to assume they are happier
+than Docker was.
 
 ---
 
@@ -247,7 +270,9 @@ Docker interoperability is untested.
 1. **Wire the OCI conformance suite into CI** and make it green. Everything
    else is guesswork until this exists (R-05 warns it will consume more time
    than planned; starting now is the mitigation).
-2. **Push with a real Docker client** and fix what breaks.
+2. ~~**Push with a real Docker client** and fix what breaks.~~ Done — Docker
+   29.7.2 round-trips. Next in this line is **Podman and Skopeo**, on the
+   evidence that the reference client found two bugs in ten minutes.
 3. **Implement the S3 driver.** It is the largest missing subsystem and the
    thing that blocks multi-node deployment.
 4. **Wire the audit writer** into the handlers. The tamper-evident table is

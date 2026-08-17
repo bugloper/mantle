@@ -53,15 +53,47 @@ func (t *TokenEndpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// This endpoint has two shapes in the wild, and a registry has to serve
+	// both. The original Docker form is a GET carrying the scope in the query
+	// string and the credential in a Basic header. The OAuth2 form is a POST
+	// carrying grant_type, service, scope and username/password in a
+	// form-encoded body — which is what containerd, and therefore Docker 29,
+	// sends when pushing.
+	//
+	// Reading only the query string is silently catastrophic rather than
+	// merely wrong: the request still authenticates as nobody and still
+	// succeeds, so the client is handed a 200 and a well-formed token granting
+	// nothing at all. It then retries the push against that token forever. The
+	// failure surfaces as a 401 loop on the blob endpoint with no indication
+	// that the token service was ever involved.
 	query := r.URL.Query()
-	requested := authz.ParseScopes(query["scope"])
+	scopes := query["scope"]
+	formUsername, formPassword := "", ""
+	if r.Method == http.MethodPost {
+		if err := r.ParseForm(); err == nil {
+			if formScopes := r.PostForm["scope"]; len(formScopes) > 0 {
+				scopes = formScopes
+			}
+			formUsername = r.PostForm.Get("username")
+			formPassword = r.PostForm.Get("password")
+		}
+	}
+	requested := authz.ParseScopes(scopes)
 
 	// Authenticate. An unauthenticated request is permitted and yields a token
 	// with no access, which is how anonymous pull of a public image works: the
 	// client still presents a token, it simply grants nothing beyond what
 	// public visibility already allows.
+	username, password, ok := r.BasicAuth()
+	if !ok && formUsername != "" {
+		// The OAuth2 password grant. Credentials in a body rather than a
+		// header are equivalent for our purposes — the transport is the same,
+		// and both are protected only by TLS.
+		username, password, ok = formUsername, formPassword, true
+	}
+
 	var actor *identity.Identity
-	if username, password, ok := r.BasicAuth(); ok {
+	if ok {
 		resolved, err := t.identities.Authenticate(r.Context(), username, password)
 		if err != nil {
 			t.countFailure("bad_credentials")

@@ -75,15 +75,31 @@ func (s *Store) EnsureRepository(ctx context.Context, name, defaultOrg string, a
 			return err
 		}
 
+		// The arbiter must name the constraint that actually fires. This table
+		// carries two unique indexes over overlapping columns — UNIQUE
+		// (organization_id, name) from the table definition, and
+		// repositories_name_idx over name alone — and Postgres checks them in
+		// creation order, so the composite one raises first. An arbiter of
+		// (name) therefore leaves that conflict unhandled and the INSERT fails
+		// with a raw 23505 instead of upserting.
 		row := tx.QueryRow(ctx,
 			`INSERT INTO repositories (organization_id, name)
 			 VALUES ($1, $2)
-			 ON CONFLICT (name) DO UPDATE SET updated_at = now()
+			 ON CONFLICT (organization_id, name) DO UPDATE SET updated_at = now()
 			 RETURNING `+repositoryColumns, orgID, name)
 		repo, err = scanRepository(row)
 		return err
 	})
 	if err != nil {
+		// Belt and braces for the other index. Docker uploads a manifest's
+		// layers concurrently, so a first push arrives here several times at
+		// once, every one of them having seen "not found" from the SELECT
+		// above. Whichever loses the race can simply read what the winner
+		// wrote — the row it wanted now exists, which is the outcome it asked
+		// for.
+		if isUniqueViolation(err) {
+			return s.RepositoryByName(ctx, name)
+		}
 		return nil, err
 	}
 	return repo, nil
