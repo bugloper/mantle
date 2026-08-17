@@ -188,10 +188,15 @@ clean: ## Remove build output
 
 # --- release ---------------------------------------------------------------
 
+# A release corresponds to a git tag, so the ordinary path is to tag the commit
+# and then run `make release` with nothing else. RELEASE_VERSION is the escape
+# hatch for a one-off, and is passed straight through to the script.
+RELEASE_VERSION ?=
+
 .PHONY: release-dry-run
 release-dry-run: ## Build the container images for every architecture, push nothing
 	@contrib/release.sh --dry-run --allow-dirty
 
 .PHONY: release
-release: ## Build and publish the container images to Docker Hub
-	@contrib/release.sh $(VERSION_ARG)
+release: ## Publish to Docker Hub. Tag the commit first, or set RELEASE_VERSION=v0.1.0
+	@contrib/release.sh $(RELEASE_VERSION)
