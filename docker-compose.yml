@@ -5,7 +5,11 @@
 # at a proxy or set server.tls.mode to "file" with a real certificate.
 #
 #   docker compose up --build -d
-#   docker compose run --rm mantled --config /etc/mantle/mantle.yaml --bootstrap
+#   docker compose run --rm -e MANTLE_ADMIN_PASSWORD=... mantled --bootstrap
+#
+# There is no configuration file in the image — everything below is passed
+# through MANTLE_* variables — so --bootstrap must not be given a --config.
+# Naming a path that does not exist is a fatal error, by design.
 #
 services:
   postgres:

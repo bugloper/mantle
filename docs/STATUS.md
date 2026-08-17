@@ -108,7 +108,9 @@ ledger resource (§13.5), deployment-aware pinning (§13.4), and the
 `mantle ledger status` view.
 
 ◐ Integration packs (§13.6): `mantle setup` generates the Compose, systemd,
-Ansible, CI and curl snippets, but there is no `contrib/` directory.
+Ansible, CI and curl snippets, but they are generated text only — none are
+shipped as files. `contrib/` exists and holds `dev-seed.sh`, a development
+seeding script, not an integration pack.
 
 ❌ **Tier 2** — the host agent. Deliberately post-1.0 in the specification too.
 
@@ -199,8 +201,13 @@ checksum drift detection and advisory-locked application.
 ❌ ACME (`server.tls.mode: acme` fails loudly; use `file` or terminate TLS at a
 proxy). ❌ Backup and restore. ❌ The export escape hatch — worth calling out,
 because §3.4.5 promises it and a self-hosted product that makes leaving hard is
-lying about self-hosting. ❌ Packaging: no install script, no `.deb`/`.rpm`,
-no container image, no release automation.
+lying about self-hosting.
+
+◐ Packaging: a two-stage `Dockerfile` builds `registry` and `ui` as separate
+images, and `docker-compose.yml` brings up an evaluation stack with PostgreSQL.
+Neither is exercised by CI, so the build is unverified in the sense this
+document means it. ❌ No published image, no install script, no `.deb`/`.rpm`,
+no release automation.
 
 ---
 
