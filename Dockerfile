@@ -9,7 +9,12 @@
 # artifact is that a registry upgrade never requires a UI upgrade, or the
 # reverse.
 
-FROM golang:1.26-alpine AS build
+# --platform=$BUILDPLATFORM pins the toolchain to the machine doing the
+# building rather than the architecture being built for. Without it, a
+# multi-architecture build runs the Go compiler under QEMU emulation once per
+# target — minutes of emulated compilation per arch, for no benefit. CGO is
+# already off, so cross-compiling is a matter of setting GOOS and GOARCH.
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS build
 WORKDIR /src
 
 # Dependencies first, so a source-only change does not re-download the module
@@ -19,14 +24,17 @@ RUN go mod download
 
 COPY . .
 ARG VERSION=dev
+# Supplied by buildx for each --platform entry.
+ARG TARGETOS TARGETARCH
 # CGO is off so the results run on a minimal base with no libc.
-RUN CGO_ENABLED=0 go build \
+ENV CGO_ENABLED=0
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
       -ldflags "-s -w -X github.com/mantle-sh/mantle/internal/server.Version=${VERSION} -X main.Version=${VERSION}" \
       -o /out/mantled ./cmd/mantled && \
-    CGO_ENABLED=0 go build \
+    GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
       -ldflags "-s -w -X github.com/mantle-sh/mantle/internal/server.Version=${VERSION} -X main.Version=${VERSION}" \
       -o /out/mantle ./cmd/mantle && \
-    CGO_ENABLED=0 go build \
+    GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
       -ldflags "-s -w -X main.Version=${VERSION}" \
       -o /out/mantle-ui ./cmd/mantle-ui
 

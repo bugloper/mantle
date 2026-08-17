@@ -54,7 +54,14 @@ docker compose run --rm -e MANTLE_ADMIN_PASSWORD='choose-something' mantled --bo
 
 That builds two images from the one [`Dockerfile`](Dockerfile) — `mantled` and
 the optional `mantle-ui` — starts them alongside PostgreSQL 16, and creates the
-first administrator:
+first administrator.
+
+To run published images instead of building from this checkout — which needs
+nothing from this repository — [`docs/docker.md`](docs/docker.md) has a compose
+file that pulls `bugloper/mantle` and `bugloper/mantle-ui`, plus TLS, upgrade
+and backup guidance. Both images are built for `linux/amd64` and `linux/arm64`.
+
+Either way you get:
 
 ```
   registry   http://localhost:5000
@@ -289,7 +296,16 @@ make tidy           # go mod tidy
 make dev-setup      # create the local database and bootstrap an admin
 make dev            # run the registry in the foreground
 make dev-ui         # run the web interface in the foreground
+
+make release-dry-run  # build the images for every architecture, push nothing
+make release          # build and publish to Docker Hub
 ```
+
+`make release` runs [`contrib/release.sh`](contrib/release.sh), which refuses a
+dirty tree or an untagged commit, asks for confirmation before publishing
+anything public, and afterwards checks that the image reports the version it
+claims and that the manifest carries every architecture. `docs/docker.md`
+describes it in full.
 
 Binaries build to a temporary name and are moved into place, so rebuilding
 while a daemon is running is safe. Overwriting a running executable in place
@@ -338,8 +354,8 @@ internal/testsupport   throwaway databases and fixtures
 test/integration       end-to-end, over real HTTP against real Postgres
 test/architecture      the dependency rule, enforced
 
-docs/                  implementation status, config templates, Kamal guide
-contrib/               dev-seed.sh — sample images and deployments
+docs/                  status, config templates, Docker and Kamal guides
+contrib/               dev-seed.sh, release.sh
 ```
 
 ## Licence

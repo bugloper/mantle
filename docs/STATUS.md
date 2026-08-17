@@ -204,10 +204,14 @@ because §3.4.5 promises it and a self-hosted product that makes leaving hard is
 lying about self-hosting.
 
 ◐ Packaging: a two-stage `Dockerfile` builds `registry` and `ui` as separate
-images, and `docker-compose.yml` brings up an evaluation stack with PostgreSQL.
-Neither is exercised by CI, so the build is unverified in the sense this
-document means it. ❌ No published image, no install script, no `.deb`/`.rpm`,
-no release automation.
+images, cross-compiled for `linux/amd64` and `linux/arm64`;
+`docker-compose.yml` brings up an evaluation stack with PostgreSQL; and
+`contrib/release.sh` publishes both images to Docker Hub as manifest lists,
+refusing a dirty tree or an untagged commit and verifying the version stamp and
+architecture coverage afterwards. The multi-architecture build and the stamp
+check have been run locally. **Nothing has been published yet**, and no CI runs
+any of it. ❌ No install script, no `.deb`/`.rpm`, no release automation beyond
+that script.
 
 ---
 

@@ -185,3 +185,13 @@ dev-clean: down ## Stop everything and remove the local development instance
 .PHONY: clean
 clean: ## Remove build output
 	rm -rf $(BINDIR)
+
+# --- release ---------------------------------------------------------------
+
+.PHONY: release-dry-run
+release-dry-run: ## Build the container images for every architecture, push nothing
+	@contrib/release.sh --dry-run --allow-dirty
+
+.PHONY: release
+release: ## Build and publish the container images to Docker Hub
+	@contrib/release.sh $(VERSION_ARG)
