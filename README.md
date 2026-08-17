@@ -208,6 +208,12 @@ the collector, not merely a correct implementation of it.
 The `|| true` is not a suggestion. Recording a deploy must never be able to fail
 a deploy, and every shipped snippet is failure-tolerant.
 
+`mantle setup --pack` prints this for Compose, systemd, Ansible, CI or curl.
+[`docs/kamal.md`](docs/kamal.md) works the same ground for
+[Kamal](https://kamal-deploy.org) end to end — registry credentials, getting the
+commit out of a Kamal build, and a `post-deploy` hook that reports every host in
+one local call.
+
 ## Architecture
 
 ```
@@ -332,7 +338,7 @@ internal/testsupport   throwaway databases and fixtures
 test/integration       end-to-end, over real HTTP against real Postgres
 test/architecture      the dependency rule, enforced
 
-docs/                  implementation status and configuration templates
+docs/                  implementation status, config templates, Kamal guide
 contrib/               dev-seed.sh — sample images and deployments
 ```
 
