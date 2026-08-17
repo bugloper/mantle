@@ -55,7 +55,8 @@ die()  { printf '\n  %s✗ %s%s\n\n' "$red" "$*" "$reset" >&2; exit 1; }
 
 usage() {
   cat <<'EOF'
-Build and publish the Mantle images to Docker Hub.
+Publish a Mantle release: container images to Docker Hub, and the CLI binaries
+as a GitHub Release.
 
 Usage:
   contrib/release.sh [version] [flags]
@@ -80,7 +81,11 @@ Environment:
 Examples:
   contrib/release.sh --dry-run
   contrib/release.sh v0.1.0
+  contrib/release.sh v0.1.0 --skip-binaries      images only
+  contrib/release.sh v0.1.0 --skip-images        CLI release only
   MANTLE_NAMESPACE=acme contrib/release.sh v0.1.0
+
+See docs/releasing.md for the full runbook.
 EOF
 }
 

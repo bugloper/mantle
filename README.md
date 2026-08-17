@@ -332,7 +332,9 @@ without the other.
 It refuses a dirty tree or an untagged commit, asks for confirmation before
 publishing anything public, and afterwards checks that the image reports the
 version it claims, that the manifest carries every architecture, and that a
-freshly built CLI archive actually runs. `docs/docker.md` describes it in full.
+freshly built CLI archive actually runs.
+[`docs/releasing.md`](docs/releasing.md) is the full runbook, including how to
+test a release end to end without publishing anything.
 
 Binaries build to a temporary name and are moved into place, so rebuilding
 while a daemon is running is safe. Overwriting a running executable in place
@@ -381,7 +383,7 @@ internal/testsupport   throwaway databases and fixtures
 test/integration       end-to-end, over real HTTP against real Postgres
 test/architecture      the dependency rule, enforced
 
-docs/                  status, config templates, Docker and Kamal guides
+docs/                  status, config templates, Docker/Kamal/release guides
 contrib/               install.sh, dev-seed.sh, release.sh
 ```
 

@@ -208,17 +208,18 @@ There is no `mantle backup` or `mantle export` command yet; see
 
 ## Publishing the images
 
-Maintainers only. [`contrib/release.sh`](../contrib/release.sh) builds both
-images for both architectures and pushes them to Docker Hub:
+Maintainers only, and documented in full in
+[`docs/releasing.md`](releasing.md). The short version:
 
 ```bash
 git tag -a v0.1.0 -m 'v0.1.0'
-contrib/release.sh --dry-run     # build and verify, push nothing
-contrib/release.sh v0.1.0        # publish
+contrib/release.sh --dry-run     # build and verify everything, publish nothing
+contrib/release.sh               # publish
 ```
 
-It refuses to release from a dirty tree or an untagged commit, rejects a
-version that is not semantic, asks for confirmation before pushing anything
-public, and verifies afterwards that the image reports the version it claims
-and that the manifest carries every architecture. `--dry-run` does everything
-except push.
+[`contrib/release.sh`](../contrib/release.sh) publishes both container images
+*and* a GitHub Release carrying the CLI binaries. `--skip-binaries` limits it to
+the images. It refuses a dirty tree, an untagged commit or a non-semantic
+version, requires the version typed back before publishing, and afterwards
+checks that the image reports the version it claims and that the manifest
+carries every architecture.
