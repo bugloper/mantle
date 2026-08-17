@@ -1,0 +1,8 @@
+/bin/
+*.pem
+
+# Stray binaries from `go build ./cmd/...`, which writes to the current
+# directory rather than ./bin.
+/mantled
+/mantle
+/mantle-ui

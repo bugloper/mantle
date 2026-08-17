@@ -1,0 +1,85 @@
+# Mantle configuration.
+#
+# Resolution order is flags > MANTLE_* environment variables > this file >
+# built-in defaults. Every default is chosen to be safe when left alone, so a
+# minimal file only needs to set the domain, the database, and the storage root.
+#
+# Validate without starting:  mantled --config /etc/mantle/mantle.yaml --check
+
+server:
+  # The hostname clients will use. It appears in the token realm and, with ACME,
+  # is the name the certificate is issued for.
+  domain: registry.example.com
+  listen: "0.0.0.0:443"
+  tls:
+    # acme | file | off. Use "off" only behind a proxy that terminates TLS.
+    # NOTE: acme is not implemented in this build; use "file".
+    mode: file
+    cert: /etc/mantle/tls/fullchain.pem
+    key: /etc/mantle/tls/privkey.pem
+  read_header_timeout: 30s
+  shutdown_grace: 30s
+
+database:
+  url: postgres://mantle@localhost/mantle?sslmode=require
+  max_connections: 25
+  min_connections: 2
+
+storage:
+  # filesystem | s3. The s3 driver is not implemented in this build and will
+  # refuse to start rather than appear to work.
+  driver: filesystem
+  filesystem:
+    root: /var/lib/mantle
+    # Preflight and `mantle doctor` check free space against this.
+    min_free: 10GiB
+
+auth:
+  # Short enough to bound revocation lag, long enough to cover a large layer
+  # push without re-authenticating. Upload sessions survive token expiry.
+  token_ttl: 5m
+  # Off by default. Enabling this makes every repository marked public readable
+  # by anyone who can reach the registry.
+  anonymous_pull: false
+  signing_key_path: /var/lib/mantle/keys/token.pem
+
+limits:
+  max_blob_size: 10GiB
+  max_manifest_size: 4MiB
+  max_layers: 200
+  max_index_depth: 3
+  max_index_entries: 256
+  upload_session_ttl: 24h
+
+gc:
+  enabled: true
+  schedule: "0 3 * * *"
+  # Nothing younger than this is ever collectable, so an in-flight push cannot
+  # be raced. One hour is the enforced floor regardless of what is set here.
+  grace_period: 24h
+  # How long a quarantined object remains recoverable before its bytes go.
+  quarantine_period: 168h
+  batch_size: 1000
+
+retention:
+  enabled: true
+  # Generations behind the live image that stay pinned and rollback-ready.
+  rollback_depth: 3
+  # A policy matching more than this fraction of a repository halts instead of
+  # running: a retention rule that suddenly matches everything is a bug.
+  max_batch_fraction: 0.25
+
+ledger:
+  enabled: true
+  infer_deployments: true
+  pull_event_retention: 90d
+  # Pull events are buffered and dropped rather than slowing a pull.
+  queue_size: 8192
+  flush_interval: 2s
+  flush_size: 256
+
+observability:
+  # Bind metrics to localhost so they are not exposed on the registry port.
+  metrics_listen: "127.0.0.1:9090"
+  log_format: json
+  log_level: info

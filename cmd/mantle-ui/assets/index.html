@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Mantle</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚓</text></svg>">
+</head>
+<body>
+
+<!-- Login. Credentials live in sessionStorage and are sent as HTTP Basic on
+     each request, exactly as the CLI does. Nothing is stored server-side. -->
+<div id="login" class="login" hidden>
+  <form class="login-card" id="login-form">
+    <div class="brand"><span class="brand-mark">⚓</span> Mantle</div>
+    <p class="login-hint">Sign in with a Mantle account or a token.</p>
+    <label for="login-username">Username</label>
+    <input id="login-username" name="username" autocomplete="username" required autofocus>
+    <label for="login-secret">Password or token</label>
+    <input id="login-secret" name="secret" type="password" autocomplete="current-password" required>
+    <button type="submit" id="login-submit">Sign in</button>
+    <p class="login-error" id="login-error" hidden></p>
+    <p class="login-foot">
+      Anything you can do here, you can do with the <code>mantle</code> CLI.
+    </p>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <header class="topbar">
+    <a class="brand" href="#/"><span class="brand-mark">⚓</span> Mantle</a>
+    <nav class="nav" id="nav">
+      <a href="#/" data-route="overview">Overview</a>
+      <a href="#/repositories" data-route="repositories">Repositories</a>
+      <a href="#/organizations" data-route="organizations">Organizations</a>
+      <a href="#/identities" data-route="identities">Identities</a>
+      <a href="#/storage" data-route="storage">Storage</a>
+    </nav>
+    <div class="topbar-right">
+      <span class="registry-name" id="registry-name"></span>
+      <button class="linkish" id="sign-out" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main id="view" class="view"></main>
+
+  <footer class="footer">
+    <span id="version-line"></span>
+    <span class="footer-note" id="read-only-note" hidden>
+      Read-only mode · use the <code>mantle</code> CLI to make changes
+    </span>
+  </footer>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+# Evaluation stack: Mantle, PostgreSQL, and nothing else.
+#
+# This runs the registry over plain HTTP on localhost, which is fine for
+# evaluation and wrong for anything else. For a real deployment, terminate TLS
+# at a proxy or set server.tls.mode to "file" with a real certificate.
+#
+#   docker compose up --build -d
+#   docker compose run --rm mantled --config /etc/mantle/mantle.yaml --bootstrap
+#
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mantle
+      POSTGRES_PASSWORD: mantle
+      POSTGRES_DB: mantle
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      # mantled will not start against an unreachable database, so the registry
+      # waits for this rather than crash-looping.
+      test: ["CMD-SHELL", "pg_isready -U mantle"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  mantled:
+    build:
+      context: .
+      target: registry
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment:
+      MANTLE_SERVER_DOMAIN: localhost:5000
+      MANTLE_SERVER_LISTEN: "0.0.0.0:5000"
+      MANTLE_SERVER_TLS_MODE: "off"
+      MANTLE_DATABASE_URL: postgres://mantle:mantle@postgres/mantle?sslmode=disable
+      MANTLE_STORAGE_FILESYSTEM_ROOT: /var/lib/mantle
+      MANTLE_AUTH_SIGNING_KEY_PATH: /var/lib/mantle/keys/token.pem
+      MANTLE_OBSERVABILITY_METRICS_LISTEN: "0.0.0.0:9090"
+      MANTLE_OBSERVABILITY_LOG_FORMAT: text
+    volumes:
+      - mantle-data:/var/lib/mantle
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9090/readyz || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Optional. The registry does not need it, and removing this service changes
+  # nothing about how the registry works (§14.3).
+  mantle-ui:
+    build:
+      context: .
+      target: ui
+    depends_on:
+      mantled:
+        condition: service_healthy
+    ports:
+      - "5180:5180"
+    command: ["--registry", "http://mantled:5000", "--listen", "0.0.0.0:5180"]
+
+volumes:
+  postgres-data:
+  mantle-data:

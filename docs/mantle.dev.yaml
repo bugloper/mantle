@@ -1,0 +1,34 @@
+# Local development configuration, filled in by `make dev-setup`.
+# Not for production: TLS is off and the registry listens on loopback only.
+#
+# Port 5100 rather than the more obvious 5000: on macOS, ControlCenter's AirPlay
+# Receiver listens on 5000 and will answer instead of the registry.
+server:
+  domain: 127.0.0.1:5100
+  listen: "127.0.0.1:5100"
+  tls:
+    mode: off
+
+database:
+  url: postgres://__USER__@localhost/__DB__?sslmode=disable
+  max_connections: 10
+
+storage:
+  driver: filesystem
+  filesystem:
+    root: __ROOT__/storage
+    min_free: 1GiB
+
+auth:
+  token_ttl: 5m
+  anonymous_pull: false
+  signing_key_path: __ROOT__/token.pem
+
+observability:
+  metrics_listen: "127.0.0.1:9190"
+  log_format: text
+  log_level: info
+
+gc:
+  enabled: true
+  schedule: "0 3 * * *"
