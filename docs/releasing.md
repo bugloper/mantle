@@ -90,6 +90,10 @@ published it. So the script is deliberately obstructive:
   nobody can unwind.
 - **Publishing without confirmation.** It prints what will be published and
   requires the version to be typed back. `--yes` bypasses this.
+- **A tag that points somewhere other than HEAD.** The build always comes from
+  the working tree, so a stale tag would label this tree with a version whose
+  tag names a different commit — and "what is in v1.2.3?" would then have two
+  answers. Move the tag or pick a new version.
 
 ## What it verifies afterwards
 

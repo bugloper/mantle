@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 #
-# Build and publish the Mantle container images to Docker Hub.
+# Publish a Mantle release: the container images to Docker Hub, and the CLI
+# binaries as a GitHub Release for contrib/install.sh to fetch.
 #
-#   contrib/release.sh v0.1.0          build and push
-#   contrib/release.sh --dry-run       build, verify, push nothing
+#   contrib/release.sh v0.1.0          build and publish
+#   contrib/release.sh --dry-run       build, verify, publish nothing
 #
 # Two images come out of one Dockerfile, because §14.3 wants the registry and
 # the web interface versioned independently:
@@ -144,6 +145,24 @@ case "$VERSION" in *-*) IS_PRERELEASE=true ;; esac
 
 COMMIT="$(git rev-parse HEAD)"
 DIRTY="$(git status --porcelain)"
+
+# A tag that exists but points somewhere other than HEAD is the one way to get
+# a mismatched release past the checks above: the build always comes from the
+# working tree, so the artifact would carry this version while the tag names a
+# different commit. Anyone later asking "what is in v1.2.3?" would get two
+# different answers.
+if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
+  tagged="$(git rev-parse "$VERSION^{commit}")"
+  if [ "$tagged" != "$COMMIT" ]; then
+    die "the tag $VERSION points at $(git log --oneline -1 "$VERSION")
+    but HEAD is $(git log --oneline -1 HEAD)
+
+    The build comes from the working tree, so publishing now would label this
+    tree with a version whose tag names a different commit. Either move the tag:
+      git tag -f -a $VERSION -m '$VERSION'
+    or release a new version."
+  fi
+fi
 
 if [ -n "$DIRTY" ]; then
   if [ "$ALLOW_DIRTY" = true ]; then
