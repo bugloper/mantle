@@ -237,11 +237,12 @@ the collector, not merely a correct implementation of it.
 The `|| true` is not a suggestion. Recording a deploy must never be able to fail
 a deploy, and every shipped snippet is failure-tolerant.
 
-`mantle setup --pack` prints this for Compose, systemd, Ansible, CI or curl.
-[`docs/kamal.md`](docs/kamal.md) works the same ground for
-[Kamal](https://kamal-deploy.org) end to end — registry credentials, getting the
-commit out of a Kamal build, and a `post-deploy` hook that reports every host in
-one local call.
+`mantle setup --pack` prints this for Compose, Kamal, systemd, Ansible, CI or
+curl. For [Kamal](https://kamal-deploy.org) there is also
+[`kamal-mantle`](https://github.com/bugloper/kamal-mantle), which provisions
+Mantle itself — `kamal setup` stands the registry up before it pushes, and every
+deploy lands in the ledger. [`docs/kamal.md`](docs/kamal.md) covers both the gem
+and the by-hand path.
 
 ## Architecture
 

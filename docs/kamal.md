@@ -11,6 +11,26 @@ rather than its documented interface, this file says so.
 
 ---
 
+## The short way
+
+[`kamal-mantle`](https://github.com/bugloper/kamal-mantle) does everything below
+for you, and additionally provisions Mantle itself:
+
+```bash
+gem install kamal-mantle
+kamal-mantle init          # writes the hooks, prints the config to add
+kamal setup                # provisions Mantle, then deploys through it
+```
+
+It hangs off the `docker-setup` hook, which `kamal server bootstrap` runs before
+`kamal setup` pushes anything — so the registry exists by the time Kamal needs
+it. `mantle setup --repo <repo> --pack kamal` prints the configuration.
+
+The rest of this document is what the gem automates. Read it if you would rather
+not add a dependency, or when something the gem did needs explaining.
+
+---
+
 ## 1. Point Kamal at Mantle
 
 `mantle setup` creates the tokens and prints them once:
@@ -298,9 +318,9 @@ suffix before suspecting anything else.
 
 ## Caveats
 
-- **There is no `mantle setup --pack kamal`.** The packs are `compose`,
-  `systemd`, `ansible`, `ci`, and `curl`; the hook above is not generated for
-  you. Copy it from here.
+- **`mantle setup --pack kamal`** prints the `x-mantle` block and points at the
+  gem. The hooks in this document are still written by hand if you are not
+  using it.
 - **None of this is covered by an integration test.** The Kamal-side facts were
   read from Kamal 2.12's source and the Mantle-side behaviour was checked
   against `internal/ledger/provenance.go` and `internal/admin/ledger.go`, but no

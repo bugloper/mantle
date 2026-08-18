@@ -454,7 +454,7 @@ lines someone can read is a thing they can trust.`,
 	}
 	cmd.Flags().StringVar(&repo, "repo", "", "repository to set up (required)")
 	cmd.Flags().StringVar(&org, "org", "", "organization (default: the repository's first path component)")
-	cmd.Flags().StringVar(&pack, "pack", "compose", "deploy snippet: compose, systemd, ansible, ci, or curl")
+	cmd.Flags().StringVar(&pack, "pack", "compose", "deploy snippet: compose, kamal, systemd, ansible, ci, or curl")
 	return cmd
 }
 
@@ -487,6 +487,39 @@ func printDeploySnippet(pack, host, repo string) {
 `, repo)
 		fmt.Printf("\n    %s\n",
 			dim("The leading '-' makes systemd ignore a failure, so reporting cannot fail the unit."))
+
+	case "kamal":
+		// x-mantle.host names the machine Mantle runs on — an SSH target the
+		// gem connects to — while registry.server is the address clients dial.
+		// They are usually the same name with a port on one of them, so the
+		// port has to come off or provisioning tries to ssh to "host:5000".
+		sshHost := host
+		if h, _, found := strings.Cut(host, ":"); found {
+			sshHost = h
+		}
+		section(os.Stdout, "  Deploy — Kamal")
+		fmt.Printf(`    gem install kamal-mantle && kamal-mantle init
+
+    # config/deploy.yml
+    registry:
+      server: %s
+      username: admin
+      password:
+        - MANTLE_ADMIN_PASSWORD
+
+    x-mantle:
+      host: %s          # the machine Mantle runs on (ssh target)
+      version: latest
+      ui: true
+
+    # .kamal/secrets
+    MANTLE_ADMIN_PASSWORD=$(openssl rand -base64 24)
+`, host, sshHost)
+		fmt.Printf("\n    %s\n", dim(
+			"kamal setup then provisions Mantle before it pushes, and every deploy\n"+
+				"    is recorded here. Configuration sits at x-mantle because Kamal only\n"+
+				"    accepts extension keys at the document root."))
+		fmt.Printf("    %s\n", dim("Without the gem, see docs/kamal.md for the hooks to write by hand."))
 
 	case "ansible":
 		section(os.Stdout, "  Deploy — Ansible task")

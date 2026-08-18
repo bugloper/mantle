@@ -109,10 +109,18 @@ path of a registry operation.
 ledger resource (§13.5), deployment-aware pinning (§13.4), and the
 `mantle ledger status` view.
 
-◐ Integration packs (§13.6): `mantle setup` generates the Compose, systemd,
-Ansible, CI and curl snippets, but they are generated text only — none are
-shipped as files. `contrib/` exists and holds `dev-seed.sh`, a development
+◐ Integration packs (§13.6): `mantle setup` generates the Compose, Kamal,
+systemd, Ansible, CI and curl snippets, but they are generated text only — none
+are shipped as files. `contrib/` exists and holds `dev-seed.sh`, a development
 seeding script, not an integration pack.
+
+✅ **Kamal** has a first-class integration outside this repository:
+[`kamal-mantle`](https://github.com/bugloper/kamal-mantle) provisions Mantle
+from the `docker-setup` hook, so a plain `kamal setup` stands the registry up
+before it pushes, and reports every deploy to the ledger. It is a companion gem
+rather than a Kamal patch — Kamal has no plugin API, but it does allow `x-`
+extension keys at the document root and runs shell hooks, which is all this
+needs.
 
 ❌ **Tier 2** — the host agent. Deliberately post-1.0 in the specification too.
 
