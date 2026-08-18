@@ -24,10 +24,10 @@ and a CLI in a container is awkward to point at your own filesystem.
 git tag -a v0.1.0 -m 'v0.1.0'      # a release is a tag, always
 contrib/release.sh --dry-run       # build and verify everything, publish nothing
 contrib/release.sh                 # publish, taking the version from the tag
-git push origin v0.1.0             # the script reminds you; it does not do it
 ```
 
-`make release` is the same thing. `make release-dry-run` is the dry run, and
+The tag is pushed by the script, because `gh` cannot attach a release to a tag
+the remote does not have. `make release` is the same thing. `make release-dry-run` is the dry run, and
 passes `--allow-dirty` so it works mid-change.
 
 ---

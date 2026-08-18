@@ -423,6 +423,15 @@ See docs/STATUS.md for what is implemented and what is not."
   set -- --title "$VERSION" --notes "$notes"
   [ "$IS_PRERELEASE" = true ] && set -- "$@" --prerelease
 
+  # gh needs the tag on the remote before it can attach a release to it, and it
+  # fails with a message about --target that does not explain why. Pushing the
+  # tag is part of publishing a release, not a separate courtesy, so do it here
+  # rather than reminding the operator about it afterwards.
+  if ! git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1; then
+    say "pushing the tag $VERSION"
+    git push origin "refs/tags/$VERSION"
+  fi
+
   if gh release view "$VERSION" >/dev/null 2>&1; then
     say "release $VERSION exists — uploading assets to it"
     gh release upload "$VERSION" "$DIST"/* --clobber
@@ -456,7 +465,6 @@ cat <<EOF
   Self-hosting from here needs a PostgreSQL and one command; docs/docker.md
   has the compose file and the bootstrap step.
 
-  Remember to push the tag if you have not already:
-    git push origin $VERSION
+  The tag $VERSION is pushed; the release is attached to it.
 
 EOF
